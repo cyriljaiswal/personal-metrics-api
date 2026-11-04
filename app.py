@@ -22,5 +22,12 @@ def add_log():
     conn.close()
     return {"status": "Log added successfully"}, 201
 
+@app.route('/api/logs', methods=['GET'])
+def get_logs():
+    conn = get_db_connection()
+    logs = conn.execute('SELECT * FROM logs').fetchall()
+    conn.close()
+    return {"logs": [dict(log) for log in logs]}, 200
+
 if __name__ == '__main__':
     app.run(debug=True)
