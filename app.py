@@ -25,11 +25,12 @@ def add_log():
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     category = request.args.get('category')
+    limit = request.args.get('limit', 50)
     conn = get_db_connection()
     if category:
-        logs = conn.execute('SELECT * FROM logs WHERE category = ?', (category,)).fetchall()
+        logs = conn.execute('SELECT * FROM logs WHERE category = ? LIMIT ?', (category, limit)).fetchall()
     else:
-        logs = conn.execute('SELECT * FROM logs').fetchall()
+        logs = conn.execute('SELECT * FROM logs LIMIT ?', (limit,)).fetchall()
     conn.close()
     return {"logs": [dict(log) for log in logs]}, 200
 
