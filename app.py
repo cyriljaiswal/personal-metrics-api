@@ -24,8 +24,12 @@ def add_log():
 
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
+    category = request.args.get('category')
     conn = get_db_connection()
-    logs = conn.execute('SELECT * FROM logs').fetchall()
+    if category:
+        logs = conn.execute('SELECT * FROM logs WHERE category = ?', (category,)).fetchall()
+    else:
+        logs = conn.execute('SELECT * FROM logs').fetchall()
     conn.close()
     return {"logs": [dict(log) for log in logs]}, 200
 
