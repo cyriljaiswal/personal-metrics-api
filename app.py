@@ -37,9 +37,14 @@ def get_logs():
 @app.route('/api/logs/<int:log_id>', methods=['DELETE'])
 def delete_log(log_id):
     conn = get_db_connection()
-    conn.execute('DELETE FROM logs WHERE id = ?', (log_id,))
+    cursor = conn.execute('DELETE FROM logs WHERE id = ?', (log_id,))
     conn.commit()
+    rows_affected = cursor.rowcount
     conn.close()
+    
+    if rows_affected == 0:
+        return {"error": "Log not found"}, 404
+        
     return {"status": f"Log {log_id} deleted successfully"}, 200
 
 if __name__ == '__main__':
