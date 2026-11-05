@@ -34,5 +34,13 @@ def get_logs():
     conn.close()
     return {"logs": [dict(log) for log in logs]}, 200
 
+@app.route('/api/logs/<int:log_id>', methods=['DELETE'])
+def delete_log(log_id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM logs WHERE id = ?', (log_id,))
+    conn.commit()
+    conn.close()
+    return {"status": f"Log {log_id} deleted successfully"}, 200
+
 if __name__ == '__main__':
     app.run(debug=True)
