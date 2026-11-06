@@ -47,5 +47,16 @@ def delete_log(log_id):
         
     return {"status": f"Log {log_id} deleted successfully"}, 200
 
+@app.route('/api/summary', methods=['GET'])
+def get_summary():
+    conn = get_db_connection()
+    summary = conn.execute('''
+        SELECT category, SUM(duration_minutes) as total_minutes 
+        FROM logs 
+        GROUP BY category
+    ''').fetchall()
+    conn.close()
+    return {"summary": [dict(row) for row in summary]}, 200
+
 if __name__ == '__main__':
     app.run(debug=True)
