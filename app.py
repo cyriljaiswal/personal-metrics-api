@@ -51,7 +51,7 @@ def delete_log(log_id):
 def get_summary():
     conn = get_db_connection()
     summary = conn.execute('''
-        SELECT category, SUM(duration_minutes) as total_minutes, COUNT(id) as total_logs 
+        SELECT category, SUM(duration_minutes) as total_minutes 
         FROM logs 
         GROUP BY category
     ''').fetchall()
