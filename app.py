@@ -58,5 +58,23 @@ def get_summary():
     conn.close()
     return {"summary": [dict(row) for row in summary]}, 200
 
+@app.route('/api/logs/<int:log_id>', methods=['PUT'])
+def update_log(log_id):
+    data = request.get_json()
+    conn = get_db_connection()
+    cursor = conn.execute('''
+        UPDATE logs 
+        SET log_date = ?, category = ?, duration_minutes = ?, notes = ?
+        WHERE id = ?
+    ''', (data['log_date'], data['category'], data.get('duration_minutes', 0), data.get('notes', ''), log_id))
+    conn.commit()
+    rows_affected = cursor.rowcount
+    conn.close()
+    
+    if rows_affected == 0:
+        return {"error": "Log not found"}, 404
+        
+    return {"status": f"Log {log_id} updated successfully"}, 200
+
 if __name__ == '__main__':
     app.run(debug=True)
