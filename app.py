@@ -16,7 +16,6 @@ def home():
 def add_log():
     data = request.get_json()
     
-    # Validation Check
     if not data or 'log_date' not in data or 'category' not in data:
         return {"error": "Missing required fields. 'log_date' and 'category' are mandatory."}, 400
 
@@ -66,6 +65,11 @@ def get_summary():
 @app.route('/api/logs/<int:log_id>', methods=['PUT'])
 def update_log(log_id):
     data = request.get_json()
+    
+    # Validation Check for Update
+    if not data or 'log_date' not in data or 'category' not in data:
+        return {"error": "Missing required fields. 'log_date' and 'category' are mandatory for updates."}, 400
+
     conn = get_db_connection()
     cursor = conn.execute('''
         UPDATE logs 
