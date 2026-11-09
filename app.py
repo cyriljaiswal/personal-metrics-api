@@ -15,6 +15,11 @@ def home():
 @app.route('/api/logs', methods=['POST'])
 def add_log():
     data = request.get_json()
+    
+    # Validation Check
+    if not data or 'log_date' not in data or 'category' not in data:
+        return {"error": "Missing required fields. 'log_date' and 'category' are mandatory."}, 400
+
     conn = get_db_connection()
     conn.execute('INSERT INTO logs (log_date, category, duration_minutes, notes) VALUES (?, ?, ?, ?)',
                  (data['log_date'], data['category'], data.get('duration_minutes', 0), data.get('notes', '')))
