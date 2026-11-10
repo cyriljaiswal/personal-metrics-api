@@ -15,7 +15,6 @@ def home():
 @app.route('/api/logs', methods=['POST'])
 def add_log():
     data = request.get_json()
-    
     if not data or 'log_date' not in data or 'category' not in data:
         return {"error": "Missing required fields. 'log_date' and 'category' are mandatory."}, 400
 
@@ -29,14 +28,18 @@ def add_log():
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     category = request.args.get('category')
-    limit = request.args.get('limit', 50)
+    limit = int(request.args.get('limit', 10)) # Default limit 10 kar diya hai testing ke liye
+    page = int(request.args.get('page', 1))
+    offset = (page - 1) * limit
+    
     conn = get_db_connection()
     if category:
-        logs = conn.execute('SELECT * FROM logs WHERE category = ? LIMIT ?', (category, limit)).fetchall()
+        logs = conn.execute('SELECT * FROM logs WHERE category = ? LIMIT ? OFFSET ?', (category, limit, offset)).fetchall()
     else:
-        logs = conn.execute('SELECT * FROM logs LIMIT ?', (limit,)).fetchall()
+        logs = conn.execute('SELECT * FROM logs LIMIT ? OFFSET ?', (limit, offset)).fetchall()
     conn.close()
-    return {"logs": [dict(log) for log in logs]}, 200
+    
+    return {"logs": [dict(log) for log in logs], "page": page}, 200
 
 @app.route('/api/logs/<int:log_id>', methods=['DELETE'])
 def delete_log(log_id):
@@ -45,10 +48,8 @@ def delete_log(log_id):
     conn.commit()
     rows_affected = cursor.rowcount
     conn.close()
-    
     if rows_affected == 0:
         return {"error": "Log not found"}, 404
-        
     return {"status": f"Log {log_id} deleted successfully"}, 200
 
 @app.route('/api/summary', methods=['GET'])
@@ -65,8 +66,6 @@ def get_summary():
 @app.route('/api/logs/<int:log_id>', methods=['PUT'])
 def update_log(log_id):
     data = request.get_json()
-    
-    # Validation Check for Update
     if not data or 'log_date' not in data or 'category' not in data:
         return {"error": "Missing required fields. 'log_date' and 'category' are mandatory for updates."}, 400
 
@@ -79,10 +78,8 @@ def update_log(log_id):
     conn.commit()
     rows_affected = cursor.rowcount
     conn.close()
-    
     if rows_affected == 0:
         return {"error": "Log not found"}, 404
-        
     return {"status": f"Log {log_id} updated successfully"}, 200
 
 if __name__ == '__main__':
