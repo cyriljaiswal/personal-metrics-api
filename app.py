@@ -28,18 +28,30 @@ def add_log():
 @app.route('/api/logs', methods=['GET'])
 def get_logs():
     category = request.args.get('category')
-    limit = int(request.args.get('limit', 10)) # Default limit 10 kar diya hai testing ke liye
+    limit = int(request.args.get('limit', 10))
     page = int(request.args.get('page', 1))
     offset = (page - 1) * limit
     
     conn = get_db_connection()
     if category:
         logs = conn.execute('SELECT * FROM logs WHERE category = ? LIMIT ? OFFSET ?', (category, limit, offset)).fetchall()
+        total_items = conn.execute('SELECT COUNT(id) FROM logs WHERE category = ?', (category,)).fetchone()[0]
     else:
         logs = conn.execute('SELECT * FROM logs LIMIT ? OFFSET ?', (limit, offset)).fetchall()
+        total_items = conn.execute('SELECT COUNT(id) FROM logs').fetchone()[0]
     conn.close()
     
-    return {"logs": [dict(log) for log in logs], "page": page}, 200
+    total_pages = (total_items + limit - 1) // limit
+    
+    return {
+        "logs": [dict(log) for log in logs], 
+        "meta": {
+            "current_page": page,
+            "limit": limit,
+            "total_items": total_items,
+            "total_pages": total_pages
+        }
+    }, 200
 
 @app.route('/api/logs/<int:log_id>', methods=['DELETE'])
 def delete_log(log_id):
