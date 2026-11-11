@@ -1,7 +1,9 @@
 from flask import Flask, request
+from flask_cors import CORS
 import sqlite3
 
 app = Flask(__name__)
+CORS(app)  # Enable CORS for all routes
 
 def get_db_connection():
     conn = sqlite3.connect('database.db')
@@ -10,14 +12,14 @@ def get_db_connection():
 
 @app.route('/')
 def home():
-    return {"status": "Personal Metrics API is running"}
+    return {"status": "Personal Metrics API is running with CORS enabled"}
 
 @app.route('/api/logs', methods=['POST'])
 def add_log():
     data = request.get_json()
     if not data or 'log_date' not in data or 'category' not in data:
         return {"error": "Missing required fields. 'log_date' and 'category' are mandatory."}, 400
-
+    
     conn = get_db_connection()
     conn.execute('INSERT INTO logs (log_date, category, duration_minutes, notes) VALUES (?, ?, ?, ?)',
                  (data['log_date'], data['category'], data.get('duration_minutes', 0), data.get('notes', '')))
@@ -31,7 +33,7 @@ def get_logs():
     limit = int(request.args.get('limit', 10))
     page = int(request.args.get('page', 1))
     offset = (page - 1) * limit
-    
+
     conn = get_db_connection()
     if category:
         logs = conn.execute('SELECT * FROM logs WHERE category = ? LIMIT ? OFFSET ?', (category, limit, offset)).fetchall()
@@ -39,12 +41,12 @@ def get_logs():
     else:
         logs = conn.execute('SELECT * FROM logs LIMIT ? OFFSET ?', (limit, offset)).fetchall()
         total_items = conn.execute('SELECT COUNT(id) FROM logs').fetchone()[0]
+    
     conn.close()
-    
     total_pages = (total_items + limit - 1) // limit
-    
+
     return {
-        "logs": [dict(log) for log in logs], 
+        "logs": [dict(log) for log in logs],
         "meta": {
             "current_page": page,
             "limit": limit,
@@ -60,6 +62,7 @@ def delete_log(log_id):
     conn.commit()
     rows_affected = cursor.rowcount
     conn.close()
+    
     if rows_affected == 0:
         return {"error": "Log not found"}, 404
     return {"status": f"Log {log_id} deleted successfully"}, 200
@@ -68,8 +71,8 @@ def delete_log(log_id):
 def get_summary():
     conn = get_db_connection()
     summary = conn.execute('''
-        SELECT category, SUM(duration_minutes) as total_minutes, COUNT(id) as total_logs 
-        FROM logs 
+        SELECT category, SUM(duration_minutes) as total_minutes, COUNT(id) as total_logs
+        FROM logs
         GROUP BY category
     ''').fetchall()
     conn.close()
@@ -80,16 +83,17 @@ def update_log(log_id):
     data = request.get_json()
     if not data or 'log_date' not in data or 'category' not in data:
         return {"error": "Missing required fields. 'log_date' and 'category' are mandatory for updates."}, 400
-
+    
     conn = get_db_connection()
     cursor = conn.execute('''
-        UPDATE logs 
+        UPDATE logs
         SET log_date = ?, category = ?, duration_minutes = ?, notes = ?
         WHERE id = ?
     ''', (data['log_date'], data['category'], data.get('duration_minutes', 0), data.get('notes', ''), log_id))
     conn.commit()
     rows_affected = cursor.rowcount
     conn.close()
+    
     if rows_affected == 0:
         return {"error": "Log not found"}, 404
     return {"status": f"Log {log_id} updated successfully"}, 200
